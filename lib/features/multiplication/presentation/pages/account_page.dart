@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/user_provider.dart';
+import 'package:multiplication_app/features/multiplication/presentation/providers/user_provider.dart';
+// import 'package:multiplication_app/features/multiplication/presentation/providers/challenge_result_provider.dart'; // 未使用のためコメントアウト
 
 class AccountPage extends ConsumerWidget {
   const AccountPage({super.key});
@@ -8,92 +9,107 @@ class AccountPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsyncValue = ref.watch(userNotifierProvider);
+    // final challengeResultsAsyncValue = ref.watch(challengeResultsProvider); // 未使用のためコメントアウト
 
     return Scaffold(
-      appBar: AppBar(title: const Text('アカウント')),
+      appBar: AppBar(title: const Text('アカウント情報')),
       body: userAsyncValue.when(
         data: (user) {
           if (user == null) {
             return const Center(child: Text('ユーザー情報がありません。'));
           }
-          return Padding(
-            padding: const EdgeInsets.all(24.0),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  margin: const EdgeInsets.only(bottom: 20),
                   child: Padding(
-                    padding: const EdgeInsets.all(32.0),
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
-                          Icons.person,
-                          size: 80,
-                          color: Colors.blueAccent,
-                        ),
-                        const SizedBox(height: 20),
                         Text(
                           'ユーザー名: ${user.username}',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          '貯めた星の数: ${user.stars} 個',
                           style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(color: Colors.amber[800]),
-                          textAlign: TextAlign.center,
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(user.stars, (index) {
-                            return const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 30,
-                            );
-                          }),
+                        const SizedBox(height: 8),
+                        Text(
+                          '総獲得星数: ${user.stars}個',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontSize: 20), // 修正: fontSize を調整
+                          overflow: TextOverflow.clip,
+                          maxLines: 1,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '獲得済み段位: ${user.completedTables.isEmpty ? 'なし' : user.completedTables.join(', ')}',
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 30),
-                // 将来的な機能追加のためのボタンなど
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // 例えば、ログアウト機能など
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('その他の機能は今後追加されます！')),
-                    );
-                  },
-                  icon: const Icon(Icons.settings, size: 24),
-                  label: const Text('設定'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    textStyle: const TextStyle(fontSize: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                const SizedBox(height: 20),
+                Text(
+                  'チャレンジ履歴',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 10),
+                // challengeResultsAsyncValue.when はコメントアウトまたは削除されたため、ここには履歴表示の仮のテキストを表示
+                const Center(child: Text('履歴機能は現在開発中です。')), // 仮の表示
+                // challengeResultsAsyncValue.when(
+                //   data: (results) {
+                //     if (results.isEmpty) {
+                //       return const Center(child: Text('まだチャレンジ履歴がありません。'));
+                //     }
+                //     return ListView.builder(
+                //       shrinkWrap: true,
+                //       physics: const NeverScrollableScrollPhysics(),
+                //       itemCount: results.length,
+                //       itemBuilder: (context, index) {
+                //         final result = results[index];
+                //         final formattedDate =
+                //             DateFormat('yyyy/MM/dd HH:mm').format(result.timestamp);
+                //         return Card(
+                //           margin: const EdgeInsets.symmetric(vertical: 8.0),
+                //           child: Padding(
+                //             padding: const EdgeInsets.all(16.0),
+                //             child: Column(
+                //               crossAxisAlignment: CrossAxisAlignment.start,
+                //               children: [
+                //                 Text(
+                //                   '日付: $formattedDate',
+                //                   style: Theme.of(context).textTheme.titleMedium,
+                //                 ),
+                //                 Text(
+                //                   '正解数: ${result.correctAnswers} / ${result.totalProblems}',
+                //                   style: Theme.of(context).textTheme.bodyLarge,
+                //                 ),
+                //                 Text(
+                //                   '獲得星数: ${result.starsEarned}個',
+                //                   style: Theme.of(context).textTheme.bodyLarge,
+                //                 ),
+                //               ],
+                //             ),
+                //           ),
+                //         );
+                //       },
+                //     );
+                //   },
+                //   loading: () => const Center(child: CircularProgressIndicator()),
+                //   error: (err, stack) => Center(child: Text('履歴の読み込みエラー: $err')),
+                // ),
               ],
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('エラー: $err')),
+        error: (err, stack) => Center(child: Text('ユーザー情報の読み込みエラー: $err')),
       ),
     );
   }

@@ -16,19 +16,15 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
   @override
   Future<Either<Failure, User>> registerUser(String username) async {
     try {
-      final user = User(username: username, stars: 0);
+      // 新規ユーザー登録時に completedTables を初期化
+      final user = User(username: username, stars: 0, completedTables: []);
       await localDataSource.saveUser(user);
       return Right(user);
     } on CacheException {
-      // キャッシュに関する既知の例外を処理
       return Left(CacheFailure());
     } catch (e, stackTrace) {
-      // 予期せぬ、より広範な例外を捕捉し、ログに記録
       print('Unexpected error during user registration: $e\n$stackTrace');
-      // より汎用的な失敗タイプを返す
-      return Left(
-        ServerFailure(),
-      ); // または新しいFailureタイプ (例: UnexpectedFailure()) を定義することもできます
+      return Left(ServerFailure());
     }
   }
 
@@ -47,14 +43,34 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
   }
 
   @override
-  Future<Either<Failure, User>> updateStars(int starsToAdd) async {
+  Future<Either<Failure, User>> updateStars(
+    int starsToAdd, {
+    int? tableId,
+    bool isTableCompleted = false,
+  }) async {
     try {
-      await localDataSource.updateStars(starsToAdd);
-      final updatedUser = await localDataSource.getUser();
-      if (updatedUser != null) {
+      final user = await localDataSource.getUser();
+      if (user != null) {
+        int updatedStars = user.stars + starsToAdd;
+        List<int> updatedCompletedTables = List.from(
+          user.completedTables,
+        ); // 既存リストをコピー
+
+        if (isTableCompleted &&
+            tableId != null &&
+            !updatedCompletedTables.contains(tableId)) {
+          updatedCompletedTables.add(tableId); // 未取得の段位であれば追加
+          updatedCompletedTables.sort(); // ソートしておくと管理しやすい
+        }
+
+        final updatedUser = user.copyWith(
+          stars: updatedStars,
+          completedTables: updatedCompletedTables,
+        );
+        await localDataSource.saveUser(updatedUser);
         return Right(updatedUser);
       } else {
-        return Left(UserNotFoundFailure()); // 更新後にユーザーが見つからない場合
+        return Left(UserNotFoundFailure());
       }
     } on CacheException {
       return Left(CacheFailure());
@@ -69,17 +85,12 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
       final random = Random();
 
       if (table > 0 && table <= 9) {
-        // 特定の段
-        for (int i = 0; i < count; i++) {
+        for (int i = 1; i <= 9; i++) {
           problems.add(
-            MultiplicationProblem.create(
-              factor1: table,
-              factor2: random.nextInt(9) + 1,
-            ),
+            MultiplicationProblem.create(factor1: table, factor2: i),
           );
         }
       } else {
-        // ランダム10問 (1の段から9の段まで)
         for (int i = 0; i < count; i++) {
           problems.add(
             MultiplicationProblem.create(
@@ -91,7 +102,6 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
       }
       return Right(problems);
     } catch (e) {
-      // 問題生成ロジック自体でのエラーは稀だが、念のため
       return Left(ServerFailure());
     }
   }

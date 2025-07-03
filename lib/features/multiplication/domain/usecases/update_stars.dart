@@ -12,15 +12,25 @@ class UpdateStars implements UseCase<User, UpdateStarsParams> {
 
   @override
   Future<Either<Failure, User>> call(UpdateStarsParams params) async {
-    return await repository.updateStars(params.starsToAdd);
+    return await repository.updateStars(
+      params.starsToAdd,
+      tableId: params.tableId,
+      isTableCompleted: params.isTableCompleted,
+    );
   }
 }
 
 class UpdateStarsParams extends Equatable {
   final int starsToAdd;
+  final int? tableId; // 追加
+  final bool isTableCompleted; // 追加
 
-  const UpdateStarsParams({required this.starsToAdd});
+  const UpdateStarsParams({
+    required this.starsToAdd,
+    this.tableId,
+    this.isTableCompleted = false,
+  });
 
   @override
-  List<Object?> get props => [starsToAdd];
+  List<Object?> get props => [starsToAdd, tableId, isTableCompleted];
 }

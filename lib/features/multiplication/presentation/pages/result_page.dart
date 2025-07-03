@@ -75,9 +75,8 @@ class ResultPage extends StatelessWidget {
               const SizedBox(height: 40),
               ElevatedButton.icon(
                 onPressed: () {
-                  GoRouter.of(
-                    context,
-                  ).go('/multiplication_selection'); // 問題選択画面に戻る
+                  // 修正: パスを ShellRoute のパスに変更
+                  GoRouter.of(context).go('/home/selection'); // 問題選択画面に戻る
                 },
                 icon: const Icon(Icons.home, size: 30),
                 label: const Text('もう一度チャレンジ！'),

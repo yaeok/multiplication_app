@@ -7,7 +7,11 @@ import 'package:multiplication_app/features/multiplication/domain/entities/user/
 abstract class MultiplicationRepository {
   Future<Either<Failure, User>> registerUser(String username);
   Future<Either<Failure, User>> getUser();
-  Future<Either<Failure, User>> updateStars(int starsToAdd);
+  Future<Either<Failure, User>> updateStars(
+    int starsToAdd, {
+    int? tableId,
+    bool isTableCompleted = false,
+  });
   Future<Either<Failure, List<MultiplicationProblem>>>
   getMultiplicationProblems(int table, int count);
   Future<Either<Failure, ChallengeResult>> saveChallengeResult(

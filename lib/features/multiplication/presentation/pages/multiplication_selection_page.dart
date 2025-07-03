@@ -10,29 +10,18 @@ class MultiplicationSelectionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsyncValue = ref.watch(userNotifierProvider);
-    // MultiplicationChallengeNotifier の状態を監視し、ロード中かどうかを判断します。
     final challengeNotifierState = ref.watch(
       multiplicationChallengeNotifierProvider,
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('かけ算チャレンジ'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () => GoRouter.of(context).go('/account'),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('かけ算チャレンジ')),
       body: userAsyncValue.when(
         data: (user) {
           if (user == null) {
             return const Center(child: Text('ユーザー情報がありません。'));
           }
 
-          // MultiplicationChallengeNotifier が全体的にロード中かどうかを判断
-          // (AsyncNotifier の build メソッドが非同期処理を完了するまで)
           final bool isOverallLoading = challengeNotifierState.isLoading;
 
           return SingleChildScrollView(
@@ -58,6 +47,12 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                           style: Theme.of(context).textTheme.titleLarge,
                           textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '獲得済み段位: ${user.completedTables.isEmpty ? 'なし' : user.completedTables.join(', ')}',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),
@@ -80,6 +75,11 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                   itemCount: 9,
                   itemBuilder: (context, index) {
                     final table = index + 1;
+                    // 獲得済み段位の場合はボタンの見た目を変えるなど、視覚的なフィードバックも追加可能
+                    final bool isTableCompleted = user.completedTables.contains(
+                      table,
+                    );
+
                     return ElevatedButton(
                       // isOverallLoading が true の間はボタンを無効化
                       onPressed: isOverallLoading
@@ -90,23 +90,41 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                                     multiplicationChallengeNotifierProvider
                                         .notifier,
                                   )
-                                  .startChallenge(table, 10);
+                                  .startChallenge(table, 9); // 特定の段の場合、countは9
                               GoRouter.of(context).go('/challenge');
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.lightBlue[100 * table], // 段ごとに色を変える
+                        backgroundColor: isTableCompleted
+                            ? Colors
+                                  .lightGreen
+                                  .shade100 // 獲得済みは別の色に
+                            : Colors.lightBlue[100 * table],
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text(
-                        '$tableの段',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(
+                            '$tableの段',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (isTableCompleted)
+                            const Positioned(
+                              top: 5,
+                              right: 5,
+                              child: Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 24,
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   },
@@ -128,7 +146,7 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                                 multiplicationChallengeNotifierProvider
                                     .notifier,
                               )
-                              .startChallenge(0, 10); // 0でランダム
+                              .startChallenge(0, 10); // ランダムの場合、countは10
                           GoRouter.of(context).go('/challenge');
                         },
                   style: ElevatedButton.styleFrom(
@@ -136,7 +154,6 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  // ロード中は CircularProgressIndicator を表示
                   child: isOverallLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
@@ -147,7 +164,6 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                           ),
                         ),
                 ),
-                // MultiplicationChallengeNotifier がロード中またはエラーの場合の表示
                 if (challengeNotifierState.isLoading)
                   const Padding(
                     padding: EdgeInsets.only(top: 16.0),
@@ -167,9 +183,8 @@ class MultiplicationSelectionPage extends ConsumerWidget {
             ),
           );
         },
-        loading: () =>
-            const Center(child: CircularProgressIndicator()), // ユーザー情報ロード中
-        error: (err, stack) => Center(child: Text('エラー: $err')), // ユーザー情報ロードエラー
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('エラー: $err')),
       ),
     );
   }
