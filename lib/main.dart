@@ -96,6 +96,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'くくべん',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true, // Material 3 を有効化
         colorScheme: customColorScheme, // カスタムカラーを適用
