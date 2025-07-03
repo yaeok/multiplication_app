@@ -7,7 +7,7 @@ part of 'multiplication_challenge_provider.dart';
 // **************************************************************************
 
 String _$multiplicationChallengeNotifierHash() =>
-    r'b81de6fc94244bcbba989ccccf1339c7e4c15faf';
+    r'19e201a0a7572a381a12a39efd30e82e49432e97';
 
 /// See also [MultiplicationChallengeNotifier].
 @ProviderFor(MultiplicationChallengeNotifier)

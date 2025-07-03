@@ -5,7 +5,11 @@ part 'user.g.dart';
 
 @freezed
 class User with _$User {
-  const factory User({required String username, @Default(0) int stars}) = _User;
+  const factory User({
+    required String username,
+    @Default(0) int stars,
+    @Default([]) List<int> completedTables, // 新しいフィールドを追加
+  }) = _User;
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 }

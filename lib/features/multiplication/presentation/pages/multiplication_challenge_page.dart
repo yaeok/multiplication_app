@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:multiplication_app/go_router.dart';
 import '../providers/multiplication_challenge_provider.dart';
 
 class MultiplicationChallengePage extends ConsumerStatefulWidget {
@@ -13,27 +14,42 @@ class MultiplicationChallengePage extends ConsumerStatefulWidget {
 
 class _MultiplicationChallengePageState
     extends ConsumerState<MultiplicationChallengePage> {
-  final TextEditingController _answerController = TextEditingController();
-  final FocusNode _answerFocusNode = FocusNode();
+  String _currentAnswerInput = ''; // ユーザーの入力を保持する文字列
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _answerFocusNode.requestFocus();
-    });
   }
 
   @override
   void dispose() {
-    _answerController.dispose();
-    _answerFocusNode.dispose();
     super.dispose();
+  }
+
+  // 数字ボタンが押されたときの処理
+  void _onNumberPressed(String number) {
+    setState(() {
+      // 3桁以上の入力は許可しない（例: 9x9=81 なので最大2桁）
+      if (_currentAnswerInput.length < 3) {
+        _currentAnswerInput += number;
+      }
+    });
+  }
+
+  // 削除ボタンが押されたときの処理
+  void _onDeletePressed() {
+    setState(() {
+      if (_currentAnswerInput.isNotEmpty) {
+        _currentAnswerInput = _currentAnswerInput.substring(
+          0,
+          _currentAnswerInput.length - 1,
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // challengeStateAsyncValue は AsyncValue<MultiplicationChallengeState> 型になります
     final challengeStateAsyncValue = ref.watch(
       multiplicationChallengeNotifierProvider,
     );
@@ -42,42 +58,48 @@ class _MultiplicationChallengePageState
     );
 
     // チャレンジ完了時のリダイレクト
-    // ここも AsyncValue の状態をリッスンするように変更
-    ref.listen<AsyncValue<MultiplicationChallengeState>>(
-      multiplicationChallengeNotifierProvider,
-      (previous, next) {
-        // AsyncData の時のみ処理
-        if (next.hasValue && next.value!.isChallengeComplete && mounted) {
-          GoRouter.of(context).replace(
+    ref.listen<
+      AsyncValue<MultiplicationChallengeState>
+    >(multiplicationChallengeNotifierProvider, (previous, next) async {
+      print('Listener triggered. Previous state: $previous, Next state: $next');
+      if (next.hasValue) {
+        print(
+          'Next state has value. isChallengeComplete: ${next.value!.isChallengeComplete}',
+        );
+      }
+
+      if (next.hasValue && next.value!.isChallengeComplete && mounted) {
+        print('Navigation condition met! Navigating to /result');
+        await Future.delayed(const Duration(milliseconds: 50)); // UIが落ち着くのを待つ
+
+        // 修正: グローバルキーの currentContext を使用して GoRouter にアクセス
+        if (rootNavigatorKey.currentContext != null) {
+          GoRouter.of(rootNavigatorKey.currentContext!).pushReplacement(
+            // context の代わりに _rootNavigatorKey.currentContext を使用
             '/result',
             extra: {
-              'correctAnswers':
-                  next.value!.correctAnswers, // .value! で実際の状態にアクセス
-              'totalProblems': next.value!.totalProblems, // .value! で実際の状態にアクセス
+              'correctAnswers': next.value!.correctAnswers,
+              'totalProblems': next.value!.totalProblems,
               'starsEarned':
                   (next.value!.correctAnswers == next.value!.totalProblems)
-                  ? 3
-                  : (next.value!.correctAnswers >=
-                        next.value!.totalProblems * 0.7)
-                  ? 2
-                  : (next.value!.correctAnswers >=
-                        next.value!.totalProblems * 0.5)
                   ? 1
                   : 0,
             },
           );
-        } else if (next.hasError && mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('エラー: ${next.error}')));
+        } else {
+          print('Error: Root Navigator Context is null. Cannot navigate.');
         }
-      },
-    );
+      } else if (next.hasError && mounted) {
+        print('Listener detected error: ${next.error}');
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('エラー: ${next.error}')));
+      }
+    });
 
     // AsyncValue の状態に応じて UI を構築
     return challengeStateAsyncValue.when(
       data: (challengeState) {
-        // data コールバックで実際の challengeState を取得
         if (challengeState.problems.isEmpty && !challengeState.isLoading) {
           return Scaffold(
             appBar: AppBar(title: const Text('かけ算チャレンジ')),
@@ -89,6 +111,18 @@ class _MultiplicationChallengePageState
           return Scaffold(
             appBar: AppBar(title: const Text('問題準備中')),
             body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // チャレンジ完了のチェック（RangeError対策）
+        if (challengeState.isChallengeComplete) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('チャレンジ完了')),
+            body: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              ),
+            ),
           );
         }
 
@@ -139,50 +173,83 @@ class _MultiplicationChallengePageState
                   ),
                 ),
                 const SizedBox(height: 40),
-                TextField(
-                  controller: _answerController,
-                  focusNode: _answerFocusNode,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: '答えを入力',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: const BorderSide(
-                        color: Colors.blueAccent,
-                        width: 2,
-                      ),
+                // TextField を削除し、Text ウィジェットで入力内容を表示
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _currentAnswerInput.isEmpty
+                          ? Colors.blueAccent
+                          : Colors.deepPurple,
+                      width: _currentAnswerInput.isEmpty ? 2 : 3,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                      borderSide: const BorderSide(
-                        color: Colors.deepPurple,
-                        width: 3,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 20),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  onSubmitted: (_) => _submitAnswer(challengeNotifier),
+                  child: Text(
+                    _currentAnswerInput.isEmpty ? '答えを入力' : _currentAnswerInput,
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: _currentAnswerInput.isEmpty
+                          ? Colors.grey
+                          : Colors.black,
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: () => _submitAnswer(challengeNotifier),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 60),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                // 数字キーパッドのレイアウト
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNumberButton('1', context),
+                        _buildNumberButton('2', context),
+                        _buildNumberButton('3', context),
+                      ],
                     ),
-                  ),
-                  child: const Text(
-                    '回答する',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNumberButton('4', context),
+                        _buildNumberButton('5', context),
+                        _buildNumberButton('6', context),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNumberButton('7', context),
+                        _buildNumberButton('8', context),
+                        _buildNumberButton('9', context),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildNumberButton('0', context),
+                        _buildActionButton(
+                          '削除',
+                          _onDeletePressed,
+                          context,
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                        ),
+                        _buildActionButton(
+                          '回答',
+                          () => _submitAnswer(challengeNotifier),
+                          context,
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 if (challengeState.errorMessage != null)
                   Padding(
@@ -198,24 +265,77 @@ class _MultiplicationChallengePageState
         );
       },
       loading: () => Scaffold(
-        // ロード中はプログレスインジケーターを表示
         appBar: AppBar(title: const Text('問題準備中')),
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (err, stack) => Scaffold(
-        // エラー発生時はエラーメッセージを表示
         appBar: AppBar(title: const Text('エラー')),
         body: Center(child: Text('エラー: $err')),
       ),
     );
   }
 
+  // 数字ボタンを生成するヘルパーメソッド
+  Widget _buildNumberButton(String number, BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: ElevatedButton(
+          onPressed: () => _onNumberPressed(number),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueGrey.shade50,
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            textStyle: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: Text(number),
+        ),
+      ),
+    );
+  }
+
+  // アクションボタン（削除など）を生成するヘルパーメソッド
+  Widget _buildActionButton(
+    String text,
+    VoidCallback onPressed,
+    BuildContext context, {
+    Color? backgroundColor,
+    Color? foregroundColor,
+  }) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor ?? Colors.grey,
+            foregroundColor: foregroundColor ?? Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            textStyle: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: Text(text),
+        ),
+      ),
+    );
+  }
+
   void _submitAnswer(MultiplicationChallengeNotifier notifier) {
-    final userAnswer = int.tryParse(_answerController.text);
+    final userAnswer = int.tryParse(_currentAnswerInput);
     if (userAnswer != null) {
       notifier.checkAnswer(userAnswer);
-      _answerController.clear();
-      _answerFocusNode.requestFocus();
+      setState(() {
+        _currentAnswerInput = ''; // 回答後、入力欄をクリア
+      });
     } else {
       ScaffoldMessenger.of(
         context,

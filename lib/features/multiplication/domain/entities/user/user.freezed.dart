@@ -23,6 +23,7 @@ User _$UserFromJson(Map<String, dynamic> json) {
 mixin _$User {
   String get username => throw _privateConstructorUsedError;
   int get stars => throw _privateConstructorUsedError;
+  List<int> get completedTables => throw _privateConstructorUsedError;
 
   /// Serializes this User to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -38,7 +39,7 @@ abstract class $UserCopyWith<$Res> {
   factory $UserCopyWith(User value, $Res Function(User) then) =
       _$UserCopyWithImpl<$Res, User>;
   @useResult
-  $Res call({String username, int stars});
+  $Res call({String username, int stars, List<int> completedTables});
 }
 
 /// @nodoc
@@ -55,7 +56,11 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? username = null, Object? stars = null}) {
+  $Res call({
+    Object? username = null,
+    Object? stars = null,
+    Object? completedTables = null,
+  }) {
     return _then(
       _value.copyWith(
             username: null == username
@@ -66,6 +71,10 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
                 ? _value.stars
                 : stars // ignore: cast_nullable_to_non_nullable
                       as int,
+            completedTables: null == completedTables
+                ? _value.completedTables
+                : completedTables // ignore: cast_nullable_to_non_nullable
+                      as List<int>,
           )
           as $Val,
     );
@@ -80,7 +89,7 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
   ) = __$$UserImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String username, int stars});
+  $Res call({String username, int stars, List<int> completedTables});
 }
 
 /// @nodoc
@@ -94,7 +103,11 @@ class __$$UserImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? username = null, Object? stars = null}) {
+  $Res call({
+    Object? username = null,
+    Object? stars = null,
+    Object? completedTables = null,
+  }) {
     return _then(
       _$UserImpl(
         username: null == username
@@ -105,6 +118,10 @@ class __$$UserImplCopyWithImpl<$Res>
             ? _value.stars
             : stars // ignore: cast_nullable_to_non_nullable
                   as int,
+        completedTables: null == completedTables
+            ? _value._completedTables
+            : completedTables // ignore: cast_nullable_to_non_nullable
+                  as List<int>,
       ),
     );
   }
@@ -113,7 +130,11 @@ class __$$UserImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$UserImpl implements _User {
-  const _$UserImpl({required this.username, this.stars = 0});
+  const _$UserImpl({
+    required this.username,
+    this.stars = 0,
+    final List<int> completedTables = const [],
+  }) : _completedTables = completedTables;
 
   factory _$UserImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserImplFromJson(json);
@@ -123,10 +144,18 @@ class _$UserImpl implements _User {
   @override
   @JsonKey()
   final int stars;
+  final List<int> _completedTables;
+  @override
+  @JsonKey()
+  List<int> get completedTables {
+    if (_completedTables is EqualUnmodifiableListView) return _completedTables;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_completedTables);
+  }
 
   @override
   String toString() {
-    return 'User(username: $username, stars: $stars)';
+    return 'User(username: $username, stars: $stars, completedTables: $completedTables)';
   }
 
   @override
@@ -136,12 +165,21 @@ class _$UserImpl implements _User {
             other is _$UserImpl &&
             (identical(other.username, username) ||
                 other.username == username) &&
-            (identical(other.stars, stars) || other.stars == stars));
+            (identical(other.stars, stars) || other.stars == stars) &&
+            const DeepCollectionEquality().equals(
+              other._completedTables,
+              _completedTables,
+            ));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, username, stars);
+  int get hashCode => Object.hash(
+    runtimeType,
+    username,
+    stars,
+    const DeepCollectionEquality().hash(_completedTables),
+  );
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
@@ -158,8 +196,11 @@ class _$UserImpl implements _User {
 }
 
 abstract class _User implements User {
-  const factory _User({required final String username, final int stars}) =
-      _$UserImpl;
+  const factory _User({
+    required final String username,
+    final int stars,
+    final List<int> completedTables,
+  }) = _$UserImpl;
 
   factory _User.fromJson(Map<String, dynamic> json) = _$UserImpl.fromJson;
 
@@ -167,6 +208,8 @@ abstract class _User implements User {
   String get username;
   @override
   int get stars;
+  @override
+  List<int> get completedTables;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
