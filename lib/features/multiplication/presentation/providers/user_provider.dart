@@ -14,50 +14,45 @@ class UserNotifier extends _$UserNotifier {
 
   @override
   FutureOr<User?> build() async {
-    _registerUser = ref.read(registerUserUseCaseProvider);
-    _getUserData = ref.read(getUserDataUseCaseProvider);
-    // Providerが初期化されるときにユーザーデータをロードする
-    // これで go_router の redirect 内で await する必要がなくなる
-    return await loadUserInternal(); // build メソッドから呼ぶプライベートなロード関数
+    // ユースケースプロバイダの future を await する
+    _registerUser = await ref.read(registerUserUseCaseProvider.future);
+    _getUserData = await ref.read(getUserDataUseCaseProvider.future);
+    return await loadUserInternal();
   }
 
-  // 外部からの呼び出しは不要になるため、プライベートなメソッドにするか、
-  // loadUser() 自体もbuildメソッド内でしか呼ばれないようにする
-  // 今回は loadUser() を build() 内で呼ぶ形に調整
   Future<User?> loadUserInternal() async {
-    // メソッド名を変更
-    state = const AsyncLoading(); // ロード中状態に設定
+    state = const AsyncLoading();
     final failureOrUser = await _getUserData(NoParams());
     return failureOrUser.fold(
       (failure) {
-        state = AsyncError(failure, StackTrace.current); // エラー状態に設定
+        state = AsyncError(failure, StackTrace.current);
         print('Error loading user: $failure');
-        return null; // ユーザーが見つからない場合
+        return null;
       },
       (user) {
-        state = AsyncData(user); // 成功データを設定
+        state = AsyncData(user);
         return user;
       },
     );
   }
 
   Future<void> createUser(String username) async {
-    state = const AsyncLoading(); // ロード中状態に設定
+    state = const AsyncLoading();
     final failureOrUser = await _registerUser(
       RegisterUserParams(username: username),
     );
     failureOrUser.fold(
       (failure) {
-        state = AsyncError(failure, StackTrace.current); // エラー状態に設定
+        state = AsyncError(failure, StackTrace.current);
         print('Error registering user: $failure');
       },
       (user) {
-        state = AsyncData(user); // 成功データを設定
+        state = AsyncData(user);
       },
     );
   }
 
   void updateCurrentUser(User updatedUser) {
-    state = AsyncData(updatedUser); // ユーザー情報を直接更新
+    state = AsyncData(updatedUser);
   }
 }

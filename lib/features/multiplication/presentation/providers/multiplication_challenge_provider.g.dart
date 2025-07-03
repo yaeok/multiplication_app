@@ -7,12 +7,12 @@ part of 'multiplication_challenge_provider.dart';
 // **************************************************************************
 
 String _$multiplicationChallengeNotifierHash() =>
-    r'4365df8b417d56f6ae6b3ccc48928d9aa9f63089';
+    r'b81de6fc94244bcbba989ccccf1339c7e4c15faf';
 
 /// See also [MultiplicationChallengeNotifier].
 @ProviderFor(MultiplicationChallengeNotifier)
 final multiplicationChallengeNotifierProvider =
-    AutoDisposeNotifierProvider<
+    AutoDisposeAsyncNotifierProvider<
       MultiplicationChallengeNotifier,
       MultiplicationChallengeState
     >.internal(
@@ -26,6 +26,6 @@ final multiplicationChallengeNotifierProvider =
     );
 
 typedef _$MultiplicationChallengeNotifier =
-    AutoDisposeNotifier<MultiplicationChallengeState>;
+    AutoDisposeAsyncNotifier<MultiplicationChallengeState>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

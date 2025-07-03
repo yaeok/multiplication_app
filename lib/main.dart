@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'features/multiplication/data/datasources/local_data_source.dart';
 import 'features/multiplication/data/datasources/local_data_source_impl.dart';
@@ -22,55 +21,65 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
   return await SharedPreferences.getInstance();
 });
 
-final localDataSourceProvider = Provider<LocalDataSource>((ref) {
-  final sharedPrefs = ref.watch(sharedPreferencesProvider).value;
-  if (sharedPrefs == null) {
-    throw Exception('SharedPreferences not initialized');
-  }
+// localDataSourceProvider を FutureProvider に変更
+final localDataSourceProvider = FutureProvider<LocalDataSource>((ref) async {
+  final sharedPrefs = await ref.watch(
+    sharedPreferencesProvider.future,
+  ); // .future を使用して await
   return LocalDataSourceImpl(sharedPreferences: sharedPrefs);
 });
 
-final multiplicationRepositoryProvider = Provider<MultiplicationRepository>((
-  ref,
-) {
-  final localDataSource = ref.watch(localDataSourceProvider);
-  return MultiplicationRepositoryImpl(localDataSource: localDataSource);
+// multiplicationRepositoryProvider を FutureProvider に変更
+final multiplicationRepositoryProvider =
+    FutureProvider<MultiplicationRepository>((ref) async {
+      final localDataSource = await ref.watch(
+        localDataSourceProvider.future,
+      ); // .future を使用して await
+      return MultiplicationRepositoryImpl(localDataSource: localDataSource);
+    });
+
+// 各ユースケースプロバイダを FutureProvider に変更
+final registerUserUseCaseProvider = FutureProvider<RegisterUser>((ref) async {
+  final repository = await ref.watch(
+    multiplicationRepositoryProvider.future,
+  ); // .future を使用して await
+  return RegisterUser(repository);
 });
 
-final registerUserUseCaseProvider = Provider<RegisterUser>((ref) {
-  return RegisterUser(ref.watch(multiplicationRepositoryProvider));
+final getUserDataUseCaseProvider = FutureProvider<GetUserData>((ref) async {
+  final repository = await ref.watch(
+    multiplicationRepositoryProvider.future,
+  ); // .future を使用して await
+  return GetUserData(repository);
 });
 
-final getUserDataUseCaseProvider = Provider<GetUserData>((ref) {
-  return GetUserData(ref.watch(multiplicationRepositoryProvider));
-});
-
-final updateStarsUseCaseProvider = Provider<UpdateStars>((ref) {
-  return UpdateStars(ref.watch(multiplicationRepositoryProvider));
+final updateStarsUseCaseProvider = FutureProvider<UpdateStars>((ref) async {
+  final repository = await ref.watch(
+    multiplicationRepositoryProvider.future,
+  ); // .future を使用して await
+  return UpdateStars(repository);
 });
 
 final getMultiplicationProblemsUseCaseProvider =
-    Provider<GetMultiplicationProblems>((ref) {
-      return GetMultiplicationProblems(
-        ref.watch(multiplicationRepositoryProvider),
-      );
+    FutureProvider<GetMultiplicationProblems>((ref) async {
+      final repository = await ref.watch(
+        multiplicationRepositoryProvider.future,
+      ); // .future を使用して await
+      return GetMultiplicationProblems(repository);
     });
 
-final saveChallengeResultUseCaseProvider = Provider<SaveChallengeResult>((ref) {
-  return SaveChallengeResult(ref.watch(multiplicationRepositoryProvider));
+final saveChallengeResultUseCaseProvider = FutureProvider<SaveChallengeResult>((
+  ref,
+) async {
+  final repository = await ref.watch(
+    multiplicationRepositoryProvider.future,
+  ); // .future を使用して await
+  return SaveChallengeResult(repository);
 });
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // .envファイルのロード
-  // await dotenv.load(fileName: ".env.development");
-
-  runApp(
-    const ProviderScope(
-      // Riverpodを使用するためにProviderScopeでラップ
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
@@ -78,16 +87,14 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final goRouter = ref.watch(goRouterProvider); // GoRouterインスタンスを取得
+    final goRouter = ref.watch(goRouterProvider);
 
     return MaterialApp.router(
       title: 'かけ算学習アプリ',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        textTheme: GoogleFonts.interTextTheme(
-          // Google Fontsを適用
-          Theme.of(context).textTheme,
-        ),
+        textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.blueAccent,
           foregroundColor: Colors.white,
@@ -111,7 +118,7 @@ class MyApp extends ConsumerWidget {
           ),
         ),
       ),
-      routerConfig: goRouter, // GoRouterを設定
+      routerConfig: goRouter,
     );
   }
 }

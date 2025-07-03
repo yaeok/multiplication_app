@@ -10,6 +10,10 @@ class MultiplicationSelectionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsyncValue = ref.watch(userNotifierProvider);
+    // MultiplicationChallengeNotifier の状態を監視し、ロード中かどうかを判断します。
+    final challengeNotifierState = ref.watch(
+      multiplicationChallengeNotifierProvider,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -24,9 +28,13 @@ class MultiplicationSelectionPage extends ConsumerWidget {
       body: userAsyncValue.when(
         data: (user) {
           if (user == null) {
-            // ユーザーがロードされていない、またはnullの場合
             return const Center(child: Text('ユーザー情報がありません。'));
           }
+
+          // MultiplicationChallengeNotifier が全体的にロード中かどうかを判断
+          // (AsyncNotifier の build メソッドが非同期処理を完了するまで)
+          final bool isOverallLoading = challengeNotifierState.isLoading;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -73,14 +81,18 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final table = index + 1;
                     return ElevatedButton(
-                      onPressed: () {
-                        ref
-                            .read(
-                              multiplicationChallengeNotifierProvider.notifier,
-                            )
-                            .startChallenge(table, 10);
-                        GoRouter.of(context).go('/challenge');
-                      },
+                      // isOverallLoading が true の間はボタンを無効化
+                      onPressed: isOverallLoading
+                          ? null
+                          : () {
+                              ref
+                                  .read(
+                                    multiplicationChallengeNotifierProvider
+                                        .notifier,
+                                  )
+                                  .startChallenge(table, 10);
+                              GoRouter.of(context).go('/challenge');
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             Colors.lightBlue[100 * table], // 段ごとに色を変える
@@ -107,28 +119,57 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    ref
-                        .read(multiplicationChallengeNotifierProvider.notifier)
-                        .startChallenge(0, 10); // 0でランダム
-                    GoRouter.of(context).go('/challenge');
-                  },
+                  // isOverallLoading が true の間はボタンを無効化
+                  onPressed: isOverallLoading
+                      ? null
+                      : () {
+                          ref
+                              .read(
+                                multiplicationChallengeNotifierProvider
+                                    .notifier,
+                              )
+                              .startChallenge(0, 10); // 0でランダム
+                          GoRouter.of(context).go('/challenge');
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purpleAccent,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  child: const Text(
-                    'ランダム10問に挑戦！',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
+                  // ロード中は CircularProgressIndicator を表示
+                  child: isOverallLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'ランダム10問に挑戦！',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
+                // MultiplicationChallengeNotifier がロード中またはエラーの場合の表示
+                if (challengeNotifierState.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 16.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                if (challengeNotifierState.hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: Center(
+                      child: Text(
+                        '問題設定エラー: ${challengeNotifierState.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
               ],
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('エラー: $err')),
+        loading: () =>
+            const Center(child: CircularProgressIndicator()), // ユーザー情報ロード中
+        error: (err, stack) => Center(child: Text('エラー: $err')), // ユーザー情報ロードエラー
       ),
     );
   }
