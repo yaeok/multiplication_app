@@ -20,7 +20,15 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
       await localDataSource.saveUser(user);
       return Right(user);
     } on CacheException {
+      // キャッシュに関する既知の例外を処理
       return Left(CacheFailure());
+    } catch (e, stackTrace) {
+      // 予期せぬ、より広範な例外を捕捉し、ログに記録
+      print('Unexpected error during user registration: $e\n$stackTrace');
+      // より汎用的な失敗タイプを返す
+      return Left(
+        ServerFailure(),
+      ); // または新しいFailureタイプ (例: UnexpectedFailure()) を定義することもできます
     }
   }
 
