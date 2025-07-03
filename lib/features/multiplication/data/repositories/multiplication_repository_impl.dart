@@ -16,14 +16,12 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
   @override
   Future<Either<Failure, User>> registerUser(String username) async {
     try {
-      // 新規ユーザー登録時に completedTables を初期化
       final user = User(username: username, stars: 0, completedTables: []);
       await localDataSource.saveUser(user);
       return Right(user);
     } on CacheException {
       return Left(CacheFailure());
-    } catch (e, stackTrace) {
-      print('Unexpected error during user registration: $e\n$stackTrace');
+    } catch (e) {
       return Left(ServerFailure());
     }
   }
@@ -52,15 +50,13 @@ class MultiplicationRepositoryImpl implements MultiplicationRepository {
       final user = await localDataSource.getUser();
       if (user != null) {
         int updatedStars = user.stars + starsToAdd;
-        List<int> updatedCompletedTables = List.from(
-          user.completedTables,
-        ); // 既存リストをコピー
+        List<int> updatedCompletedTables = List.from(user.completedTables);
 
         if (isTableCompleted &&
             tableId != null &&
             !updatedCompletedTables.contains(tableId)) {
-          updatedCompletedTables.add(tableId); // 未取得の段位であれば追加
-          updatedCompletedTables.sort(); // ソートしておくと管理しやすい
+          updatedCompletedTables.add(tableId);
+          updatedCompletedTables.sort();
         }
 
         final updatedUser = user.copyWith(

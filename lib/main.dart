@@ -1,3 +1,4 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,60 +22,42 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>((
   return await SharedPreferences.getInstance();
 });
 
-// localDataSourceProvider を FutureProvider に変更
 final localDataSourceProvider = FutureProvider<LocalDataSource>((ref) async {
-  final sharedPrefs = await ref.watch(
-    sharedPreferencesProvider.future,
-  ); // .future を使用して await
+  final sharedPrefs = await ref.watch(sharedPreferencesProvider.future);
   return LocalDataSourceImpl(sharedPreferences: sharedPrefs);
 });
 
-// multiplicationRepositoryProvider を FutureProvider に変更
 final multiplicationRepositoryProvider =
     FutureProvider<MultiplicationRepository>((ref) async {
-      final localDataSource = await ref.watch(
-        localDataSourceProvider.future,
-      ); // .future を使用して await
+      final localDataSource = await ref.watch(localDataSourceProvider.future);
       return MultiplicationRepositoryImpl(localDataSource: localDataSource);
     });
 
-// 各ユースケースプロバイダを FutureProvider に変更
 final registerUserUseCaseProvider = FutureProvider<RegisterUser>((ref) async {
-  final repository = await ref.watch(
-    multiplicationRepositoryProvider.future,
-  ); // .future を使用して await
+  final repository = await ref.watch(multiplicationRepositoryProvider.future);
   return RegisterUser(repository);
 });
 
 final getUserDataUseCaseProvider = FutureProvider<GetUserData>((ref) async {
-  final repository = await ref.watch(
-    multiplicationRepositoryProvider.future,
-  ); // .future を使用して await
+  final repository = await ref.watch(multiplicationRepositoryProvider.future);
   return GetUserData(repository);
 });
 
-final updateStarsUseCaseProvider = FutureProvider<UpdateStars>((ref) async {
-  final repository = await ref.watch(
-    multiplicationRepositoryProvider.future,
-  ); // .future を使用して await
-  return UpdateStars(repository);
+final updateStarsUseCaseProvider = Provider<UpdateStars>((ref) {
+  return UpdateStars(ref.watch(multiplicationRepositoryProvider).value!);
 });
 
 final getMultiplicationProblemsUseCaseProvider =
-    FutureProvider<GetMultiplicationProblems>((ref) async {
-      final repository = await ref.watch(
-        multiplicationRepositoryProvider.future,
-      ); // .future を使用して await
-      return GetMultiplicationProblems(repository);
+    Provider<GetMultiplicationProblems>((ref) {
+      return GetMultiplicationProblems(
+        ref.watch(multiplicationRepositoryProvider).value!,
+      );
     });
 
-final saveChallengeResultUseCaseProvider = FutureProvider<SaveChallengeResult>((
-  ref,
-) async {
-  final repository = await ref.watch(
-    multiplicationRepositoryProvider.future,
-  ); // .future を使用して await
-  return SaveChallengeResult(repository);
+final saveChallengeResultUseCaseProvider = Provider<SaveChallengeResult>((ref) {
+  return SaveChallengeResult(
+    ref.watch(multiplicationRepositoryProvider).value!,
+  );
 });
 
 void main() async {
@@ -89,32 +72,91 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goRouter = ref.watch(goRouterProvider);
 
+    // Define custom colors from hex codes
+    const Color baseColor = Color(0xFFFDFDFD);
+    const Color accentColor = Color(
+      0xFF47CC81,
+    ); // アクセントカラー #5F767 を #05F767 と解釈
+    const Color secondaryColor = Color(0xFF2C4242); // セカンダリカラー #2C4242
+
+    final ColorScheme customColorScheme = ColorScheme.fromSeed(
+      seedColor: accentColor, // シードカラーにアクセントカラーを設定
+      brightness: Brightness.light,
+      // ユーザー指定のカラーを適用
+      primary: accentColor,
+      onPrimary: Colors.black, // 明るいプライマリカラーに対してコントラストの高い黒を設定
+      secondary: secondaryColor,
+      onSecondary: Colors.white, // 濃いセカンダリカラーに対して白を設定
+      error: Colors.red, // 標準のエラーカラー
+      onError: Colors.white,
+      surface: baseColor, // カードやシートなどのサーフェスカラーにベースカラーを適用
+      onSurface: Colors.black87,
+      outline: secondaryColor, // アウトラインカラーにセカンダリカラーの透過版を使用
+    );
+
     return MaterialApp.router(
-      title: 'かけ算学習アプリ',
-      debugShowCheckedModeBanner: false,
+      title: 'くくべん',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true, // Material 3 を有効化
+        colorScheme: customColorScheme, // カスタムカラーを適用
         textTheme: GoogleFonts.interTextTheme(Theme.of(context).textTheme),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blueAccent,
-          foregroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: customColorScheme.primary,
+          foregroundColor: customColorScheme.onPrimary,
+          elevation: 2,
+          titleTextStyle: GoogleFonts.inter(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: customColorScheme.onPrimary,
+          ),
+          iconTheme: IconThemeData(color: customColorScheme.onPrimary),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
+            backgroundColor: customColorScheme.primary,
+            foregroundColor: customColorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: const TextStyle(
+            textStyle: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
+            elevation: 4,
           ),
         ),
         cardTheme: CardThemeData(
+          color: customColorScheme.surface,
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: customColorScheme.surface,
+          selectedItemColor: customColorScheme.primary,
+          unselectedItemColor: customColorScheme.onSurface.withOpacity(0.6),
+          selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: GoogleFonts.inter(),
+          type: BottomNavigationBarType.fixed,
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: customColorScheme.secondary,
+          foregroundColor: customColorScheme.onSecondary,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: customColorScheme.outline),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: customColorScheme.primary, width: 2),
+          ),
+          labelStyle: TextStyle(color: customColorScheme.onSurface),
+          hintStyle: TextStyle(
+            color: customColorScheme.onSurface.withOpacity(0.6),
           ),
         ),
       ),

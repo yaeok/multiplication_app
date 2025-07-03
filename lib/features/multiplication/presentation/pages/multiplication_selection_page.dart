@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:multiplication_app/common/widgets/user_summary_card.dart';
 import '../providers/multiplication_challenge_provider.dart';
 import '../providers/user_provider.dart';
 
@@ -29,33 +30,11 @@ class MultiplicationSelectionPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Card(
-                  margin: const EdgeInsets.only(bottom: 20),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'ようこそ、${user.username}さん！',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '現在の星の数: ${user.stars}個',
-                          style: Theme.of(context).textTheme.titleLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '獲得済み段位: ${user.completedTables.isEmpty ? 'なし' : user.completedTables.join(', ')}',
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+                // 共通ウィジェット UserSummaryCard を使用
+                UserSummaryCard(
+                  user: user,
+                  title: 'ようこそ、${user.username}さん！',
+                  crossAxisAlignment: CrossAxisAlignment.center,
                 ),
                 const Text(
                   '段を選んでチャレンジ！',
@@ -75,13 +54,11 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                   itemCount: 9,
                   itemBuilder: (context, index) {
                     final table = index + 1;
-                    // 獲得済み段位の場合はボタンの見た目を変えるなど、視覚的なフィードバックも追加可能
                     final bool isTableCompleted = user.completedTables.contains(
                       table,
                     );
 
                     return ElevatedButton(
-                      // isOverallLoading が true の間はボタンを無効化
                       onPressed: isOverallLoading
                           ? null
                           : () {
@@ -90,7 +67,7 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                                     multiplicationChallengeNotifierProvider
                                         .notifier,
                                   )
-                                  .startChallenge(table, 9); // 特定の段の場合、countは9
+                                  .startChallenge(table, 9);
                               GoRouter.of(context).go('/challenge');
                             },
                       style: ElevatedButton.styleFrom(
@@ -98,32 +75,38 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                             ? Colors
                                   .lightGreen
                                   .shade100 // 獲得済みは別の色に
-                            : Colors.lightBlue[100 * table],
+                            : Colors.green[100 * table],
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
+                      child: Column(
+                        // ★修正: Stack から Column に変更★
+                        mainAxisAlignment:
+                            MainAxisAlignment.center, // コンテンツを垂直方向中央に配置
+                        crossAxisAlignment:
+                            CrossAxisAlignment.center, // コンテンツを水平方向中央に配置
+                        mainAxisSize:
+                            MainAxisSize.min, // Column のサイズをコンテンツに合わせて最小限にする
                         children: [
                           Text(
                             '$tableの段',
+                            textAlign: TextAlign.center, // テキストを中央揃えにする
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          if (isTableCompleted)
-                            const Positioned(
-                              top: 5,
-                              right: 5,
-                              child: Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 24,
-                              ),
+                          if (isTableCompleted) ...[
+                            // ★修正: 星がある場合のみ表示★
+                            const SizedBox(height: 5), // テキストと星の間に少しスペースを追加
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 24,
                             ),
+                          ],
                         ],
                       ),
                     );
@@ -150,7 +133,7 @@ class MultiplicationSelectionPage extends ConsumerWidget {
                           GoRouter.of(context).go('/challenge');
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purpleAccent,
+                    backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),

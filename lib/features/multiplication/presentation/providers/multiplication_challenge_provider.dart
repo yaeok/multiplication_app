@@ -21,31 +21,25 @@ class MultiplicationChallengeNotifier
   @override
   FutureOr<MultiplicationChallengeState> build() async {
     _getMultiplicationProblems = await ref.read(
-      getMultiplicationProblemsUseCaseProvider.future,
+      getMultiplicationProblemsUseCaseProvider,
     );
-    _updateStars = await ref.read(updateStarsUseCaseProvider.future);
-    _saveChallengeResult = await ref.read(
-      saveChallengeResultUseCaseProvider.future,
-    );
+    _updateStars = await ref.read(updateStarsUseCaseProvider);
+    _saveChallengeResult = await ref.read(saveChallengeResultUseCaseProvider);
     return const MultiplicationChallengeState();
   }
 
   Future<void> startChallenge(int table, int count) async {
-    // 修正: challengeTable を設定
     state = AsyncData(
       MultiplicationChallengeState(
-        // const を削除
         problems: [],
         currentProblemIndex: 0,
         correctAnswers: 0,
         isChallengeComplete: false,
         errorMessage: null,
         isLoading: true,
-        challengeTable: table, // challengeTable を設定
+        challengeTable: table,
       ),
     );
-
-    print('startChallenge called for table: $table, count: $count');
 
     final failureOrProblems = await _getMultiplicationProblems(
       GetMultiplicationProblemsParams(table: table, count: count),
@@ -59,15 +53,10 @@ class MultiplicationChallengeNotifier
             isLoading: false,
           ),
         );
-        print('Error fetching problems: $failure');
       },
       (problems) {
-        print('Problems received from repository: ${problems.length}');
         state = AsyncData(
           state.value!.copyWith(problems: problems, isLoading: false),
-        );
-        print(
-          'Notifier state updated with problems.length: ${state.value!.problems.length}',
         );
       },
     );
@@ -79,10 +68,6 @@ class MultiplicationChallengeNotifier
         state.value!.currentProblem == null) {
       return;
     }
-
-    print(
-      'Check answer: currentProblemIndex: ${state.value!.currentProblemIndex}, problems.length: ${state.value!.problems.length}',
-    );
 
     int newCorrectAnswers = state.value!.correctAnswers;
     if (userAnswer == state.value!.currentProblem!.answer) {
@@ -96,7 +81,6 @@ class MultiplicationChallengeNotifier
           correctAnswers: newCorrectAnswers,
         ),
       );
-      print('Challenge complete after processing last problem.');
     } else {
       state = AsyncData(
         state.value!.copyWith(
@@ -104,49 +88,34 @@ class MultiplicationChallengeNotifier
           correctAnswers: newCorrectAnswers,
         ),
       );
-      print(
-        'Moving to next problem. New index: ${state.value!.currentProblemIndex + 1}',
-      );
     }
 
-    // ★★★ 星の計算ロジックの修正 ★★★
     int starsEarned = 0;
-    int? earnedTableId; // 獲得した段位のID
-    bool isTableAlreadyCompleted = false;
+    int? earnedTableId;
 
-    // 全問正解かつ、それが特定の段位のチャレンジである場合 (ランダムチャレンジは除外)
     if (newCorrectAnswers == state.value!.totalProblems &&
         state.value!.challengeTable > 0) {
       final userNotifier = ref.read(userNotifierProvider.notifier);
       final currentUser = userNotifier.state.value;
 
       if (currentUser != null) {
-        // その段位が既に取得済みでないかチェック
         if (!currentUser.completedTables.contains(
           state.value!.challengeTable,
         )) {
-          starsEarned = 1; // 星を1つ獲得
-          earnedTableId = state.value!.challengeTable; // 獲得した段位IDを記録
-        } else {
-          isTableAlreadyCompleted = true; // 既に取得済み
-          print(
-            'Star for table ${state.value!.challengeTable} already acquired.',
-          );
+          starsEarned = 1;
+          earnedTableId = state.value!.challengeTable;
         }
       }
     }
-    // ★★★ 星の計算ロジック修正終わり ★★★
 
     final userNotifier = ref.read(userNotifierProvider.notifier);
-    final currentUser = userNotifier.state.value;
 
-    // 星を獲得した場合のみ updateStars を呼ぶ
     if (starsEarned > 0) {
       final failureOrUser = await _updateStars(
         UpdateStarsParams(
           starsToAdd: starsEarned,
           tableId: earnedTableId,
-          isTableCompleted: earnedTableId != null, // 段位を獲得したことを示す
+          isTableCompleted: earnedTableId != null,
         ),
       );
       failureOrUser.fold(
@@ -154,24 +123,17 @@ class MultiplicationChallengeNotifier
           state = AsyncData(
             state.value!.copyWith(errorMessage: '星の更新に失敗しました。'),
           );
-          print('Error updating stars: $failure');
         },
         (updatedUser) {
           userNotifier.updateCurrentUser(updatedUser);
         },
       );
-    } else if (isTableAlreadyCompleted) {
-      // 星は獲得しないが、デバッグログ目的でメッセージ出力
-      print(
-        'Challenge completed, but star for this table was already acquired.',
-      );
     }
 
-    // チャレンジ結果を保存
     final result = ChallengeResult(
       correctAnswers: newCorrectAnswers,
       totalProblems: state.value!.totalProblems,
-      starsEarned: starsEarned, // 実際に獲得した星の数を結果に渡す
+      starsEarned: starsEarned,
       timestamp: DateTime.now(),
     );
     await _saveChallengeResult(SaveChallengeResultParams(result: result));
@@ -187,7 +149,7 @@ class MultiplicationChallengeState with _$MultiplicationChallengeState {
     @Default(false) bool isChallengeComplete,
     String? errorMessage,
     @Default(false) bool isLoading,
-    @Default(0) int challengeTable, // 新しいフィールド: 何の段位に挑戦しているか (0はランダム)
+    @Default(0) int challengeTable,
   }) = _MultiplicationChallengeState;
 
   const MultiplicationChallengeState._();
