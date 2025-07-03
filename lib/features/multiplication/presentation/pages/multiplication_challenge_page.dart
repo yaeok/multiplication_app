@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:multiplication_app/go_router.dart';
 import '../providers/multiplication_challenge_provider.dart';
+import 'package:multiplication_app/go_router.dart';
 
 class MultiplicationChallengePage extends ConsumerStatefulWidget {
   const MultiplicationChallengePage({super.key});
@@ -14,7 +14,7 @@ class MultiplicationChallengePage extends ConsumerStatefulWidget {
 
 class _MultiplicationChallengePageState
     extends ConsumerState<MultiplicationChallengePage> {
-  String _currentAnswerInput = ''; // ユーザーの入力を保持する文字列
+  String _currentAnswerInput = '';
 
   @override
   void initState() {
@@ -26,17 +26,14 @@ class _MultiplicationChallengePageState
     super.dispose();
   }
 
-  // 数字ボタンが押されたときの処理
   void _onNumberPressed(String number) {
     setState(() {
-      // 3桁以上の入力は許可しない（例: 9x9=81 なので最大2桁）
       if (_currentAnswerInput.length < 3) {
         _currentAnswerInput += number;
       }
     });
   }
 
-  // 削除ボタンが押されたときの処理
   void _onDeletePressed() {
     setState(() {
       if (_currentAnswerInput.isNotEmpty) {
@@ -57,25 +54,14 @@ class _MultiplicationChallengePageState
       multiplicationChallengeNotifierProvider.notifier,
     );
 
-    // チャレンジ完了時のリダイレクト
     ref.listen<
       AsyncValue<MultiplicationChallengeState>
     >(multiplicationChallengeNotifierProvider, (previous, next) async {
-      print('Listener triggered. Previous state: $previous, Next state: $next');
-      if (next.hasValue) {
-        print(
-          'Next state has value. isChallengeComplete: ${next.value!.isChallengeComplete}',
-        );
-      }
-
       if (next.hasValue && next.value!.isChallengeComplete && mounted) {
-        print('Navigation condition met! Navigating to /result');
-        await Future.delayed(const Duration(milliseconds: 50)); // UIが落ち着くのを待つ
+        await Future.delayed(const Duration(milliseconds: 50));
 
-        // 修正: グローバルキーの currentContext を使用して GoRouter にアクセス
         if (rootNavigatorKey.currentContext != null) {
           GoRouter.of(rootNavigatorKey.currentContext!).pushReplacement(
-            // context の代わりに _rootNavigatorKey.currentContext を使用
             '/result',
             extra: {
               'correctAnswers': next.value!.correctAnswers,
@@ -87,17 +73,16 @@ class _MultiplicationChallengePageState
             },
           );
         } else {
-          print('Error: Root Navigator Context is null. Cannot navigate.');
+          // print('Error: Root Navigator Context is null. Cannot navigate.'); // 削除
         }
       } else if (next.hasError && mounted) {
-        print('Listener detected error: ${next.error}');
+        // print('Listener detected error: ${next.error}'); // 削除
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('エラー: ${next.error}')));
       }
     });
 
-    // AsyncValue の状態に応じて UI を構築
     return challengeStateAsyncValue.when(
       data: (challengeState) {
         if (challengeState.problems.isEmpty && !challengeState.isLoading) {
@@ -114,7 +99,6 @@ class _MultiplicationChallengePageState
           );
         }
 
-        // チャレンジ完了のチェック（RangeError対策）
         if (challengeState.isChallengeComplete) {
           return Scaffold(
             appBar: AppBar(title: const Text('チャレンジ完了')),
@@ -141,17 +125,20 @@ class _MultiplicationChallengePageState
             ),
           ),
           body: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(18.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Card(
-                  elevation: 8,
+                  elevation: 6,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(32.0),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 64,
+                    ),
                     child: Column(
                       children: [
                         Text(
@@ -165,31 +152,30 @@ class _MultiplicationChallengePageState
                           style: Theme.of(context).textTheme.displayLarge
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
+                                color: Colors.black,
                               ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
-                // TextField を削除し、Text ウィジェットで入力内容を表示
+                const SizedBox(height: 32),
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: _currentAnswerInput.isEmpty
                           ? Colors.blueAccent
                           : Colors.deepPurple,
-                      width: _currentAnswerInput.isEmpty ? 2 : 3,
+                      width: 2,
                     ),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Text(
                     _currentAnswerInput.isEmpty ? '答えを入力' : _currentAnswerInput,
                     style: TextStyle(
-                      fontSize: 36,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: _currentAnswerInput.isEmpty
                           ? Colors.grey
@@ -198,7 +184,6 @@ class _MultiplicationChallengePageState
                   ),
                 ),
                 const SizedBox(height: 30),
-                // 数字キーパッドのレイアウト
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -232,7 +217,6 @@ class _MultiplicationChallengePageState
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildNumberButton('0', context),
                         _buildActionButton(
                           '削除',
                           _onDeletePressed,
@@ -240,6 +224,7 @@ class _MultiplicationChallengePageState
                           backgroundColor: Colors.redAccent,
                           foregroundColor: Colors.white,
                         ),
+                        _buildNumberButton('0', context),
                         _buildActionButton(
                           '回答',
                           () => _submitAnswer(challengeNotifier),
@@ -275,7 +260,6 @@ class _MultiplicationChallengePageState
     );
   }
 
-  // 数字ボタンを生成するヘルパーメソッド
   Widget _buildNumberButton(String number, BuildContext context) {
     return Expanded(
       child: Padding(
@@ -283,8 +267,12 @@ class _MultiplicationChallengePageState
         child: ElevatedButton(
           onPressed: () => _onNumberPressed(number),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blueGrey.shade50,
-            foregroundColor: Colors.black,
+            backgroundColor: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest, // Material 3
+            foregroundColor: Theme.of(
+              context,
+            ).colorScheme.onSurfaceVariant, // Material 3
             padding: const EdgeInsets.symmetric(vertical: 20),
             textStyle: Theme.of(
               context,
@@ -299,7 +287,6 @@ class _MultiplicationChallengePageState
     );
   }
 
-  // アクションボタン（削除など）を生成するヘルパーメソッド
   Widget _buildActionButton(
     String text,
     VoidCallback onPressed,
@@ -313,8 +300,12 @@ class _MultiplicationChallengePageState
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: backgroundColor ?? Colors.grey,
-            foregroundColor: foregroundColor ?? Colors.black,
+            backgroundColor:
+                backgroundColor ??
+                Theme.of(context).colorScheme.tertiary, // Material 3
+            foregroundColor:
+                foregroundColor ??
+                Theme.of(context).colorScheme.onTertiary, // Material 3
             padding: const EdgeInsets.symmetric(vertical: 20),
             textStyle: Theme.of(
               context,
@@ -323,7 +314,7 @@ class _MultiplicationChallengePageState
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: Text(text),
+          child: Text(text, style: const TextStyle(fontSize: 20)),
         ),
       ),
     );
@@ -334,7 +325,7 @@ class _MultiplicationChallengePageState
     if (userAnswer != null) {
       notifier.checkAnswer(userAnswer);
       setState(() {
-        _currentAnswerInput = ''; // 回答後、入力欄をクリア
+        _currentAnswerInput = '';
       });
     } else {
       ScaffoldMessenger.of(
