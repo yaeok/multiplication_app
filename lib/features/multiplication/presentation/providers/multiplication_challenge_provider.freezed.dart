@@ -25,6 +25,8 @@ mixin _$MultiplicationChallengeState {
   String? get errorMessage => throw _privateConstructorUsedError;
   bool get isLoading => throw _privateConstructorUsedError;
   int get challengeTable => throw _privateConstructorUsedError;
+  List<ChallengeProblemResult> get problemResults =>
+      throw _privateConstructorUsedError;
 
   /// Create a copy of MultiplicationChallengeState
   /// with the given fields replaced by the non-null parameter values.
@@ -52,6 +54,7 @@ abstract class $MultiplicationChallengeStateCopyWith<$Res> {
     String? errorMessage,
     bool isLoading,
     int challengeTable,
+    List<ChallengeProblemResult> problemResults,
   });
 }
 
@@ -80,6 +83,7 @@ class _$MultiplicationChallengeStateCopyWithImpl<
     Object? errorMessage = freezed,
     Object? isLoading = null,
     Object? challengeTable = null,
+    Object? problemResults = null,
   }) {
     return _then(
       _value.copyWith(
@@ -111,6 +115,10 @@ class _$MultiplicationChallengeStateCopyWithImpl<
                 ? _value.challengeTable
                 : challengeTable // ignore: cast_nullable_to_non_nullable
                       as int,
+            problemResults: null == problemResults
+                ? _value.problemResults
+                : problemResults // ignore: cast_nullable_to_non_nullable
+                      as List<ChallengeProblemResult>,
           )
           as $Val,
     );
@@ -134,6 +142,7 @@ abstract class _$$MultiplicationChallengeStateImplCopyWith<$Res>
     String? errorMessage,
     bool isLoading,
     int challengeTable,
+    List<ChallengeProblemResult> problemResults,
   });
 }
 
@@ -162,6 +171,7 @@ class __$$MultiplicationChallengeStateImplCopyWithImpl<$Res>
     Object? errorMessage = freezed,
     Object? isLoading = null,
     Object? challengeTable = null,
+    Object? problemResults = null,
   }) {
     return _then(
       _$MultiplicationChallengeStateImpl(
@@ -193,6 +203,10 @@ class __$$MultiplicationChallengeStateImplCopyWithImpl<$Res>
             ? _value.challengeTable
             : challengeTable // ignore: cast_nullable_to_non_nullable
                   as int,
+        problemResults: null == problemResults
+            ? _value._problemResults
+            : problemResults // ignore: cast_nullable_to_non_nullable
+                  as List<ChallengeProblemResult>,
       ),
     );
   }
@@ -209,7 +223,9 @@ class _$MultiplicationChallengeStateImpl extends _MultiplicationChallengeState {
     this.errorMessage,
     this.isLoading = false,
     this.challengeTable = 0,
+    final List<ChallengeProblemResult> problemResults = const [],
   }) : _problems = problems,
+       _problemResults = problemResults,
        super._();
 
   final List<MultiplicationProblem> _problems;
@@ -238,10 +254,18 @@ class _$MultiplicationChallengeStateImpl extends _MultiplicationChallengeState {
   @override
   @JsonKey()
   final int challengeTable;
+  final List<ChallengeProblemResult> _problemResults;
+  @override
+  @JsonKey()
+  List<ChallengeProblemResult> get problemResults {
+    if (_problemResults is EqualUnmodifiableListView) return _problemResults;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_problemResults);
+  }
 
   @override
   String toString() {
-    return 'MultiplicationChallengeState(problems: $problems, currentProblemIndex: $currentProblemIndex, correctAnswers: $correctAnswers, isChallengeComplete: $isChallengeComplete, errorMessage: $errorMessage, isLoading: $isLoading, challengeTable: $challengeTable)';
+    return 'MultiplicationChallengeState(problems: $problems, currentProblemIndex: $currentProblemIndex, correctAnswers: $correctAnswers, isChallengeComplete: $isChallengeComplete, errorMessage: $errorMessage, isLoading: $isLoading, challengeTable: $challengeTable, problemResults: $problemResults)';
   }
 
   @override
@@ -261,7 +285,11 @@ class _$MultiplicationChallengeStateImpl extends _MultiplicationChallengeState {
             (identical(other.isLoading, isLoading) ||
                 other.isLoading == isLoading) &&
             (identical(other.challengeTable, challengeTable) ||
-                other.challengeTable == challengeTable));
+                other.challengeTable == challengeTable) &&
+            const DeepCollectionEquality().equals(
+              other._problemResults,
+              _problemResults,
+            ));
   }
 
   @override
@@ -274,6 +302,7 @@ class _$MultiplicationChallengeStateImpl extends _MultiplicationChallengeState {
     errorMessage,
     isLoading,
     challengeTable,
+    const DeepCollectionEquality().hash(_problemResults),
   );
 
   /// Create a copy of MultiplicationChallengeState
@@ -300,6 +329,7 @@ abstract class _MultiplicationChallengeState
     final String? errorMessage,
     final bool isLoading,
     final int challengeTable,
+    final List<ChallengeProblemResult> problemResults,
   }) = _$MultiplicationChallengeStateImpl;
   const _MultiplicationChallengeState._() : super._();
 
@@ -317,6 +347,8 @@ abstract class _MultiplicationChallengeState
   bool get isLoading;
   @override
   int get challengeTable;
+  @override
+  List<ChallengeProblemResult> get problemResults;
 
   /// Create a copy of MultiplicationChallengeState
   /// with the given fields replaced by the non-null parameter values.

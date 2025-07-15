@@ -7,6 +7,7 @@ import 'package:multiplication_app/features/multiplication/presentation/provider
 import 'package:multiplication_app/main.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../domain/entities/challenge_problem_result/challenge_problem_result.dart'; // このimportを追加
 
 part 'multiplication_challenge_provider.g.dart';
 part 'multiplication_challenge_provider.freezed.dart';
@@ -38,6 +39,7 @@ class MultiplicationChallengeNotifier
         errorMessage: null,
         isLoading: true,
         challengeTable: table,
+        problemResults: [], // ここでproblemResultsを初期化
       ),
     );
 
@@ -70,15 +72,29 @@ class MultiplicationChallengeNotifier
     }
 
     int newCorrectAnswers = state.value!.correctAnswers;
-    if (userAnswer == state.value!.currentProblem!.answer) {
+    final isAnswerCorrect =
+        (userAnswer == state.value!.currentProblem!.answer); // 回答が正しいか判断
+    if (isAnswerCorrect) {
+      // isAnswerCorrectを使用
       newCorrectAnswers++;
     }
+
+    final newProblemResult = ChallengeProblemResult(
+      // 新しい問題結果を作成
+      problem: state.value!.currentProblem! as MultiplicationProblem,
+      userAnswer: userAnswer,
+      isCorrect: isAnswerCorrect,
+    );
+    List<ChallengeProblemResult> updatedProblemResults = List.from(
+      state.value!.problemResults,
+    )..add(newProblemResult); // リストに追加
 
     if (state.value!.currentProblemIndex == state.value!.problems.length - 1) {
       state = AsyncData(
         state.value!.copyWith(
           isChallengeComplete: true,
           correctAnswers: newCorrectAnswers,
+          problemResults: updatedProblemResults, // problemResultsを更新
         ),
       );
     } else {
@@ -86,6 +102,7 @@ class MultiplicationChallengeNotifier
         state.value!.copyWith(
           currentProblemIndex: state.value!.currentProblemIndex + 1,
           correctAnswers: newCorrectAnswers,
+          problemResults: updatedProblemResults, // problemResultsを更新
         ),
       );
     }
@@ -150,6 +167,7 @@ class MultiplicationChallengeState with _$MultiplicationChallengeState {
     String? errorMessage,
     @Default(false) bool isLoading,
     @Default(0) int challengeTable,
+    @Default([]) List<ChallengeProblemResult> problemResults, // このフィールドを追加
   }) = _MultiplicationChallengeState;
 
   const MultiplicationChallengeState._();

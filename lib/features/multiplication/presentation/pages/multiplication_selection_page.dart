@@ -16,7 +16,7 @@ class MultiplicationSelectionPage extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('かけ算チャレンジ')),
+      appBar: AppBar(title: const Text('くくべん')),
       body: userAsyncValue.when(
         data: (user) {
           if (user == null) {
@@ -30,12 +30,6 @@ class MultiplicationSelectionPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 共通ウィジェット UserSummaryCard を使用
-                UserSummaryCard(
-                  user: user,
-                  title: 'ようこそ、${user.username}さん！',
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
                 const Text(
                   '段を選んでチャレンジ！',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
