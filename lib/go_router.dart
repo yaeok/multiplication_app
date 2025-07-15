@@ -9,6 +9,7 @@ import 'features/multiplication/presentation/pages/register_user_page.dart';
 import 'features/multiplication/presentation/pages/result_page.dart';
 import 'features/multiplication/presentation/providers/user_provider.dart';
 import 'common/widgets/app_bottom_navigation_bar.dart'; // ボトムナビゲーションバーの共通ウィジェット
+import 'features/multiplication/domain/entities/challenge_problem_result/challenge_problem_result.dart'; // このimportを追加
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 // StatefulShellRoute は内部でキーを管理するため、_shellNavigatorKey は不要になります。
@@ -96,6 +97,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             correctAnswers: args?['correctAnswers'] ?? 0,
             totalProblems: args?['totalProblems'] ?? 0,
             starsEarned: args?['starsEarned'] ?? 0,
+            problemResults:
+                args?['problemResults']?.cast<ChallengeProblemResult>() ??
+                [], // problemResultsを渡す
           );
         },
       ),

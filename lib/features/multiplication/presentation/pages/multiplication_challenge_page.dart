@@ -70,6 +70,8 @@ class _MultiplicationChallengePageState
                   (next.value!.correctAnswers == next.value!.totalProblems)
                   ? 1
                   : 0,
+              'problemResults':
+                  next.value!.problemResults, // ここでproblemResultsを渡す
             },
           );
         } else {
@@ -87,7 +89,7 @@ class _MultiplicationChallengePageState
       data: (challengeState) {
         if (challengeState.problems.isEmpty && !challengeState.isLoading) {
           return Scaffold(
-            appBar: AppBar(title: const Text('かけ算チャレンジ')),
+            appBar: AppBar(title: const Text('くくべん')),
             body: const Center(child: Text('問題がありません。前の画面に戻って選択してください。')),
           );
         }
